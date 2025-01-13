@@ -2,12 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "./ProductManager.sol";
+import "./ItemManager.sol";
 
 contract LoyaltyPoints {
     address public owner;
     mapping(address => uint256) public points;
 
     ProductManager public productManager;
+    ItemManager public itemManager;
 
     //Events
     event PointsAdded(address indexed user, uint256 amount);
@@ -25,9 +27,10 @@ contract LoyaltyPoints {
         _;
     }
 
-    constructor(address productManagerAddress) {
+    constructor(address productManagerAddress, address itemManagerAddress) {
         owner = msg.sender;
         productManager = ProductManager(productManagerAddress);
+        itemManager = ItemManager(itemManagerAddress);
     }
 
     //Add points to a user
@@ -48,6 +51,23 @@ contract LoyaltyPoints {
         uint256 price = productManager.getProductPrice(productId);
         points[msg.sender] -= price;
         emit PointsRedeemed(msg.sender, price);
+    }
+
+    //Award points based on item type
+    function awardPointsForItem(uint256 itemId) external {
+        ItemManager.Item memory item = itemManager.getItem(itemId);
+
+        uint256 pointsToAward;
+        if (item.itemType == ItemManager.ItemType.Basic) {
+            pointsToAward = 10; // Award 10 points for Basic items
+        } else if (item.itemType == ItemManager.ItemType.Premium) {
+            pointsToAward = 20; // Award 20 points for Premium items
+        } else if (item.itemType == ItemManager.ItemType.Exclusive) {
+            pointsToAward = 50; // Award 50 points for Exclusive items
+        }
+
+        points[msg.sender] += pointsToAward;
+        emit PointsAdded(msg.sender, pointsToAward);
     }
 
     //View function: Get balance of points
