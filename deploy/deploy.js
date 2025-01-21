@@ -7,26 +7,28 @@ async function main() {
   console.log("Restaurant address:", restaurant.address);
   console.log("Customer address:", customer.address);
 
+  // Deploy DiscountManager
+  const DiscountManager = await hre.ethers.getContractFactory("DiscountManager");
+  const discountManager = await DiscountManager.deploy();
+  await discountManager.waitForDeployment();
+  const discountManagerAddress = await discountManager.getAddress();
+  console.log("DiscountManager deployed to:", discountManagerAddress);
+
   // Deploy FastFoodLoyalty
   const FastFoodLoyalty = await hre.ethers.getContractFactory("FastFoodLoyalty");
-  const fastFoodLoyalty = await FastFoodLoyalty.deploy();
+  const fastFoodLoyalty = await FastFoodLoyalty.deploy(discountManagerAddress);
   await fastFoodLoyalty.waitForDeployment();
   const fastFoodLoyaltyAddress = await fastFoodLoyalty.getAddress();
   console.log("FastFoodLoyalty deployed to:", fastFoodLoyaltyAddress);
 
   // Register roles for restaurant and customer
   console.log("Registering roles...");
-  await fastFoodLoyalty.connect(owner).registerAccount(restaurant.address, 1); // Register restaurant as Role.Restaurant
-  await fastFoodLoyalty.connect(owner).registerAccount(customer.address, 2); // Register customer as Role.Customer
+  await fastFoodLoyalty.connect(owner).registerAccount(restaurant.address, 1);
+  await fastFoodLoyalty.connect(owner).registerAccount(customer.address, 2);
 
-  // Verify roles
-  const restaurantAccount = await fastFoodLoyalty.accounts(restaurant.address);
-  const customerAccount = await fastFoodLoyalty.accounts(customer.address);
-  console.log(`Role for restaurant: ${restaurantAccount.role}`); // Should be 1
-  console.log(`Role for customer: ${customerAccount.role}`); // Should be 2
-
-  // Save the contract address and signer addresses
+  // Save addresses
   const addresses = {
+    DiscountManager: discountManagerAddress,
     FastFoodLoyalty: fastFoodLoyaltyAddress,
     Owner: owner.address,
     Restaurant: restaurant.address,

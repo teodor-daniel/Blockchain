@@ -1,24 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract FastFoodLoyalty {
+import "./DiscountManager.sol";
+import "./DiscountLib.sol";
+
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+contract FastFoodLoyalty is ReentrancyGuard {
     address public owner;
+    DiscountManager public discountManager;
 
     enum Role { None, Restaurant, Customer }
 
     struct MenuItem {
         string name;
-        uint256 price; //Price in points
+        uint256 price; // Price in "puncte" (pentru demo)
     }
 
     struct Account {
         Role role;
         uint256 points;
-        uint256 redeemedPoints; //Tracks points redeemed by a restaurant
+        uint256 redeemedPoints; // Tracks points redeemed by a restaurant
     }
 
     mapping(address => Account) public accounts;
     mapping(address => MenuItem[]) public restaurantMenus;
+
+    // --- ADĂUGĂM acest mapping pentru Withdrawal Pattern:
+    mapping(address => uint256) public balances;
 
     event PointsAwarded(address indexed customer, uint256 points);
     event ItemRedeemed(address indexed customer, string itemName);
@@ -40,8 +49,9 @@ contract FastFoodLoyalty {
         _;
     }
 
-    constructor() {
+    constructor(address discountManagerAddress) {
         owner = msg.sender;
+        discountManager = DiscountManager(discountManagerAddress);
     }
 
     function registerAccount(address account, Role role) external onlyOwner {
@@ -82,19 +92,54 @@ contract FastFoodLoyalty {
         return accounts[restaurant].redeemedPoints;
     }
 
-    function buy(address payable restaurant, uint256 itemIndex, uint256 quantity) external payable onlyCustomer {
+    /**
+     * @dev buy() – acum folosim DiscountLib și stocăm ETH în contract (Withdrawal Pattern).
+     */
+    function buy(address payable restaurant, uint256 itemIndex, uint256 quantity)
+        external
+        payable
+        onlyCustomer
+        nonReentrant
+    {
         require(itemIndex < restaurantMenus[restaurant].length, "Invalid menu item index");
 
         MenuItem memory item = restaurantMenus[restaurant][itemIndex];
-        uint256 totalPrice = item.price * quantity;
+
+        // 1) Luăm discountul din DiscountManager
+        uint256 discount = discountManager.getDiscount(restaurant, itemIndex);
+
+        // 2) Apelăm library-ul DiscountLib:
+        uint256 discountedPrice = DiscountLib.applyDiscount(item.price, discount);
+
+        uint256 totalPrice = discountedPrice * quantity;
 
         require(msg.value >= totalPrice, "Insufficient ETH sent");
 
-        restaurant.transfer(msg.value);
-        uint256 points = msg.value / 1000000000000000; // 1 ETH = 0.0000000000000001 points
+        // 3) În loc de `restaurant.transfer(msg.value)`, folosim withdrawal pattern:
+        balances[restaurant] += msg.value;
+
+        // 4) Atribuim puncte. (Raport 1 ETH = 1e15 puncte => 1.0 ETH => 1 / 1e-3???)
+        // Deja foloseai: 1 ETH = 0.0000000000000001 points => "1 / 1e16"? 
+        // De ex., msg.value / 1e15 => 1 ETH = 1000 points? Poți ajusta după cum vrei.
+        uint256 points = msg.value / 1000000000000000; 
         accounts[msg.sender].points += points;
 
         emit PointsAwarded(msg.sender, points);
-        emit ItemRedeemed(msg.sender, item.name);
+    }
+
+    /**
+     * @dev Permite oricărui utilizator (restaurant) să-și retragă banii (dacă are sold).
+     * Folosim ReentrancyGuard pentru siguranță.
+     */
+    function withdraw() external nonReentrant {
+        uint256 amount = balances[msg.sender];
+        require(amount > 0, "No funds to withdraw");
+
+        // resetăm soldul înainte de call extern
+        balances[msg.sender] = 0;
+
+        // trimitem ETH
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "Withdrawal failed");
     }
 }

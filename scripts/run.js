@@ -12,6 +12,7 @@ async function main() {
 
   const addresses = JSON.parse(fs.readFileSync(addressesPath, "utf8"));
   const fastFoodLoyaltyAddress = addresses.FastFoodLoyalty;
+  const discountManagerAddress = addresses.DiscountManager;
 
   const [owner, restaurant, customer] = await ethers.getSigners();
   console.log("Owner address:", owner.address);
@@ -21,56 +22,59 @@ async function main() {
   const FastFoodLoyalty = await ethers.getContractFactory("FastFoodLoyalty");
   const fastFoodLoyalty = FastFoodLoyalty.attach(fastFoodLoyaltyAddress);
 
+  const DiscountManager = await ethers.getContractFactory("DiscountManager");
+  const discountManager = DiscountManager.attach(discountManagerAddress);
+
   const restaurantAccountBefore = await fastFoodLoyalty.accounts(restaurant.address);
   if (restaurantAccountBefore.role === 0) {
     console.log("Registering restaurant...");
     await fastFoodLoyalty.connect(owner).registerAccount(restaurant.address, 1);
   }
-  const restaurantAccountAfter = await fastFoodLoyalty.accounts(restaurant.address);
-  console.log(`Role for restaurant: ${restaurantAccountAfter.role}`);
-
+ 
   const customerAccountBefore = await fastFoodLoyalty.accounts(customer.address);
   if (customerAccountBefore.role === 0) {
     console.log("Registering customer...");
     await fastFoodLoyalty.connect(owner).registerAccount(customer.address, 2);
   }
-  const customerAccountAfter = await fastFoodLoyalty.accounts(customer.address);
-  console.log(`Role for customer: ${customerAccountAfter.role}`);
 
-  //Add menu items
   console.log("Adding menu items...");
   await fastFoodLoyalty.connect(restaurant).addMenuItem("Burger", 5);
   await fastFoodLoyalty.connect(restaurant).addMenuItem("Fries", 3);
 
-  console.log("Customer buying 2 Burgers...");
-  const burgerPrice = 5;
-  const totalEthForBurgers = ethers.parseEther((burgerPrice * 2).toString());
-  await fastFoodLoyalty.connect(customer).buy(restaurant.address, 0, 2, {
-    value: totalEthForBurgers,
+  console.log("Customer buying 1 Burger at full price...");
+  const burgerPrice = ethers.parseEther("5"); //5 ETH for simplicity
+  await fastFoodLoyalty.connect(customer).buy(restaurant.address, 0, 1, {
+    value: burgerPrice,
   });
 
-  //Check ETH and points for customer
-  const customerEthBalance = await ethers.provider.getBalance(customer.address);
-  const customerPoints = await fastFoodLoyalty.getCustomerPoints(customer.address);
-  console.log(`Customer ETH balance after buying 2 Burgers: ${ethers.formatEther(customerEthBalance)} ETH`);
-  console.log(`Customer points after buying 2 Burgers: ${customerPoints.toString()}`);
+  const customerEthBalanceAfterFirstPurchase = await ethers.provider.getBalance(customer.address);
+  const customerPointsAfterFirstPurchase = await fastFoodLoyalty.getCustomerPoints(customer.address);
+  console.log(`Customer ETH balance after first Burger: ${ethers.formatEther(customerEthBalanceAfterFirstPurchase)} ETH`);
+  console.log(`Customer points after first Burger: ${customerPointsAfterFirstPurchase.toString()}`);
 
-  //Add Salad to menu
-  console.log("Adding Salad to menu...");
-  await fastFoodLoyalty.connect(restaurant).addMenuItem("Salad", 3);
+  console.log("Restaurant setting a 20% discount on Burgers...");
+  await discountManager.connect(restaurant).setDiscount(restaurant.address, 0, 20); //discount pentru burger.
 
-  //Simulate customer redeeming 1 Salad
-  console.log("Customer redeeming 1 Salad...");
-  await fastFoodLoyalty.connect(customer).redeemItem(restaurant.address, 2);
+  console.log("Customer buying 1 Burger with 20% discount...");
+  const discountedBurgerPrice = (burgerPrice * 80n) / 100n; // exemplu: 20% discount
+  await fastFoodLoyalty.connect(customer).buy(restaurant.address, 0, 1, {
+    value: discountedBurgerPrice,
+  });
+  console.log("Customer buying 1 Salad at full price...");
+  const saladPrice = ethers.parseEther("3"); //3 ETH for simplicity
+  await fastFoodLoyalty.connect(customer).buy(restaurant.address, 1, 1, {
+    value: saladPrice,
+  });
+  const customerEthBalanceAfterDiscountedPurchase = await ethers.provider.getBalance(customer.address);
+  const customerPointsAfterDiscountedPurchase = await fastFoodLoyalty.getCustomerPoints(customer.address);
+  console.log(`Customer ETH balance after discounted Burger: ${ethers.formatEther(customerEthBalanceAfterDiscountedPurchase)} ETH`);
+  console.log(`Customer points after discounted Burger: ${customerPointsAfterDiscountedPurchase.toString()}`);
 
-  //Check final points for customer and redeemed points for restaurant
-  const finalCustomerPoints = await fastFoodLoyalty.getCustomerPoints(customer.address);
-  console.log(`Customer points after redeeming 1 Salad: ${finalCustomerPoints.toString()}`);
-
-  const restaurantRedeemedPoints = await fastFoodLoyalty.getRestaurantRedeemedPoints(restaurant.address);
-  console.log(`Restaurant redeemed points: ${restaurantRedeemedPoints.toString()}`);
-  
-
+  // (Optional) Demonstrație: restaurant își retrage banii
+  console.log("Restaurant withdrawing funds...");
+  await fastFoodLoyalty.connect(restaurant).withdraw();
+  const restaurantBalanceAfter = await ethers.provider.getBalance(restaurant.address);
+  console.log("Restaurant ETH balance after withdraw:", ethers.formatEther(restaurantBalanceAfter));
 }
 
 main().catch((error) => {
