@@ -1,0 +1,24 @@
+
+.main-menu {
+    background: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+  }
+  
+  .restaurant-input {
+    margin-bottom: 1rem;
+  }
+  
+  .menu-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .menu-card {
+    border: 1px solid #eee;
+    padding: 0.5rem;
+    border-radius: 6px;
+    width: 220px;
+  }
+  

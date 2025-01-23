@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require("path");
 const hre = require("hardhat");
 
 async function main() {
@@ -21,12 +22,10 @@ async function main() {
   const fastFoodLoyaltyAddress = await fastFoodLoyalty.getAddress();
   console.log("FastFoodLoyalty deployed to:", fastFoodLoyaltyAddress);
 
-  // Register roles for restaurant and customer
   console.log("Registering roles...");
-  await fastFoodLoyalty.connect(owner).registerAccount(restaurant.address, 1);
-  await fastFoodLoyalty.connect(owner).registerAccount(customer.address, 2);
+  await fastFoodLoyalty.connect(owner).registerAccount(restaurant.address, 1); // Restaurant
+  await fastFoodLoyalty.connect(owner).registerAccount(customer.address, 2); // Customer
 
-  // Save addresses
   const addresses = {
     DiscountManager: discountManagerAddress,
     FastFoodLoyalty: fastFoodLoyaltyAddress,
@@ -34,8 +33,67 @@ async function main() {
     Restaurant: restaurant.address,
     Customer: customer.address,
   };
-  fs.writeFileSync("data/contractAddresses.json", JSON.stringify(addresses, null, 2));
+  fs.writeFileSync(
+    "data/contractAddresses.json",
+    JSON.stringify(addresses, null, 2)
+  );
   console.log("Contract addresses saved to contractAddresses.json");
+
+
+  // 1) FastFoodLoyalty
+  const loyaltyArtifactPath = path.join(
+    __dirname,
+    "..",
+    "artifacts",
+    "contracts",
+    "FastFoodLoyalty.sol",
+    "FastFoodLoyalty.json"
+  );
+  const loyaltyArtifact = JSON.parse(fs.readFileSync(loyaltyArtifactPath, "utf8"));
+  const loyaltyAbi = loyaltyArtifact.abi;
+
+  // 2) DiscountManager
+  const discountArtifactPath = path.join(
+    __dirname,
+    "..",
+    "artifacts",
+    "contracts",
+    "DiscountManager.sol",
+    "DiscountManager.json"
+  );
+  const discountArtifact = JSON.parse(fs.readFileSync(discountArtifactPath, "utf8"));
+  const discountAbi = discountArtifact.abi;
+
+  // Destination folder for ABIs
+  const abiDestDir = path.join(__dirname, "..", "web", "src", "abis");
+  if (!fs.existsSync(abiDestDir)) {
+    fs.mkdirSync(abiDestDir, { recursive: true });
+  }
+
+  // Write FastFoodLoyalty.json
+  const loyaltyAbiDest = path.join(abiDestDir, "FastFoodLoyalty.json");
+  const loyaltyOutput = {
+    address: fastFoodLoyaltyAddress,
+    owner: owner.address,
+    restaurant: restaurant.address,
+    customer: customer.address,
+    discountManager: discountManagerAddress,
+    abi: loyaltyAbi,
+  };
+  fs.writeFileSync(loyaltyAbiDest, JSON.stringify(loyaltyOutput, null, 2));
+  console.log("FastFoodLoyalty ABI + address copied to:", loyaltyAbiDest);
+
+  // Write DiscountManager.json (if you want it)
+  const discountAbiDest = path.join(abiDestDir, "DiscountManager.json");
+  const discountOutput = {
+    address: discountManagerAddress,
+    owner: owner.address,
+    abi: discountAbi,
+  };
+  fs.writeFileSync(discountAbiDest, JSON.stringify(discountOutput, null, 2));
+  console.log("DiscountManager ABI + address copied to:", discountAbiDest);
+
+  console.log("Deployment + ABI export complete!");
 }
 
 main().catch((error) => {

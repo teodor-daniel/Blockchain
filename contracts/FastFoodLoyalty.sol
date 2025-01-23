@@ -14,19 +14,18 @@ contract FastFoodLoyalty is ReentrancyGuard {
 
     struct MenuItem {
         string name;
-        uint256 price; // Price in "puncte" (pentru demo)
+        uint256 price;
     }
 
     struct Account {
         Role role;
         uint256 points;
-        uint256 redeemedPoints; // Tracks points redeemed by a restaurant
+        uint256 redeemedPoints; 
     }
 
     mapping(address => Account) public accounts;
     mapping(address => MenuItem[]) public restaurantMenus;
 
-    // --- ADĂUGĂM acest mapping pentru Withdrawal Pattern:
     mapping(address => uint256) public balances;
 
     event PointsAwarded(address indexed customer, uint256 points);
@@ -92,9 +91,7 @@ contract FastFoodLoyalty is ReentrancyGuard {
         return accounts[restaurant].redeemedPoints;
     }
 
-    /**
-     * @dev buy() – acum folosim DiscountLib și stocăm ETH în contract (Withdrawal Pattern).
-     */
+
     function buy(address payable restaurant, uint256 itemIndex, uint256 quantity)
         external
         payable
@@ -105,40 +102,29 @@ contract FastFoodLoyalty is ReentrancyGuard {
 
         MenuItem memory item = restaurantMenus[restaurant][itemIndex];
 
-        // 1) Luăm discountul din DiscountManager
         uint256 discount = discountManager.getDiscount(restaurant, itemIndex);
 
-        // 2) Apelăm library-ul DiscountLib:
         uint256 discountedPrice = DiscountLib.applyDiscount(item.price, discount);
 
         uint256 totalPrice = discountedPrice * quantity;
 
         require(msg.value >= totalPrice, "Insufficient ETH sent");
 
-        // 3) În loc de `restaurant.transfer(msg.value)`, folosim withdrawal pattern:
         balances[restaurant] += msg.value;
 
-        // 4) Atribuim puncte. (Raport 1 ETH = 1e15 puncte => 1.0 ETH => 1 / 1e-3???)
-        // Deja foloseai: 1 ETH = 0.0000000000000001 points => "1 / 1e16"? 
-        // De ex., msg.value / 1e15 => 1 ETH = 1000 points? Poți ajusta după cum vrei.
+
         uint256 points = msg.value / 1000000000000000; 
         accounts[msg.sender].points += points;
 
         emit PointsAwarded(msg.sender, points);
     }
 
-    /**
-     * @dev Permite oricărui utilizator (restaurant) să-și retragă banii (dacă are sold).
-     * Folosim ReentrancyGuard pentru siguranță.
-     */
     function withdraw() external nonReentrant {
         uint256 amount = balances[msg.sender];
         require(amount > 0, "No funds to withdraw");
 
-        // resetăm soldul înainte de call extern
         balances[msg.sender] = 0;
 
-        // trimitem ETH
         (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "Withdrawal failed");
     }

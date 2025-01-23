@@ -1,0 +1,16 @@
+.role-selector {
+    background: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .role-buttons button {
+    margin: 0 1rem;
+    background: #bf360c;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  

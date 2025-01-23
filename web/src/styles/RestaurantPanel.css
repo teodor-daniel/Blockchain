@@ -1,0 +1,19 @@
+.restaurant-panel {
+    background: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+  }
+  
+  .panel-section {
+    margin-bottom: 1rem;
+  }
+  
+  .panel-section h3 {
+    margin-top: 0;
+  }
+  
+  input {
+    margin-right: 0.5rem;
+    padding: 0.3rem;
+  }
+  

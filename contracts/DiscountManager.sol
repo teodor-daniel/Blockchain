@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract DiscountManager {
-    address public owner;
+import "./interfaces/IDiscountManager.sol";
 
-    // Mapping: restaurant -> itemIndex -> discountPercentage
-    mapping(address => mapping(uint256 => uint256)) public discounts;
+contract DiscountManager is IDiscountManager {
+    address public override owner;
 
-    event DiscountSet(address indexed restaurant, uint256 itemIndex, uint256 discountPercentage);
+    mapping(address => mapping(uint256 => uint256)) public override discounts;
+
+    constructor() {
+        owner = msg.sender;
+    }
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can perform this action");
@@ -19,17 +22,22 @@ contract DiscountManager {
         _;
     }
 
-    constructor() {
-        owner = msg.sender;
-    }
-
-    function setDiscount(address restaurant, uint256 itemIndex, uint256 discountPercentage) external onlyRestaurant(restaurant) {
+    function setDiscount(address restaurant, uint256 itemIndex, uint256 discountPercentage)
+        external
+        override
+        onlyRestaurant(restaurant)
+    {
         require(discountPercentage <= 100, "Discount cannot exceed 100%");
         discounts[restaurant][itemIndex] = discountPercentage;
         emit DiscountSet(restaurant, itemIndex, discountPercentage);
     }
 
-    function getDiscount(address restaurant, uint256 itemIndex) external view returns (uint256) {
+    function getDiscount(address restaurant, uint256 itemIndex)
+        external
+        view
+        override
+        returns (uint256)
+    {
         return discounts[restaurant][itemIndex];
     }
 }

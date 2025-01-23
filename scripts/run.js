@@ -56,21 +56,23 @@ async function main() {
   await discountManager.connect(restaurant).setDiscount(restaurant.address, 0, 20); //discount pentru burger.
 
   console.log("Customer buying 1 Burger with 20% discount...");
-  const discountedBurgerPrice = (burgerPrice * 80n) / 100n; // exemplu: 20% discount
+  const discountedBurgerPrice = (burgerPrice * 80n) / 100n; //exemplu: 20% discount
   await fastFoodLoyalty.connect(customer).buy(restaurant.address, 0, 1, {
     value: discountedBurgerPrice,
   });
+  let customerEthBalanceAfterDiscountedPurchase = await ethers.provider.getBalance(customer.address);
+
   console.log("Customer buying 1 Salad at full price...");
   const saladPrice = ethers.parseEther("3"); //3 ETH for simplicity
   await fastFoodLoyalty.connect(customer).buy(restaurant.address, 1, 1, {
     value: saladPrice,
   });
-  const customerEthBalanceAfterDiscountedPurchase = await ethers.provider.getBalance(customer.address);
+
+  customerEthBalanceAfterDiscountedPurchase = await ethers.provider.getBalance(customer.address);
   const customerPointsAfterDiscountedPurchase = await fastFoodLoyalty.getCustomerPoints(customer.address);
   console.log(`Customer ETH balance after discounted Burger: ${ethers.formatEther(customerEthBalanceAfterDiscountedPurchase)} ETH`);
   console.log(`Customer points after discounted Burger: ${customerPointsAfterDiscountedPurchase.toString()}`);
 
-  // (Optional) Demonstrație: restaurant își retrage banii
   console.log("Restaurant withdrawing funds...");
   await fastFoodLoyalty.connect(restaurant).withdraw();
   const restaurantBalanceAfter = await ethers.provider.getBalance(restaurant.address);

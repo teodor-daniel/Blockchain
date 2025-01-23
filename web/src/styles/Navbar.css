@@ -1,0 +1,31 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #bf360c;
+    color: #fff;
+    padding: 1rem;
+  }
+  
+  .logo {
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+  
+  .actions button {
+    background: #fff;
+    color: #bf360c;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  
+  .account-display {
+    background: #fff;
+    color: #bf360c;
+    padding: 0.4rem 0.7rem;
+    border-radius: 5px;
+  }
+  
