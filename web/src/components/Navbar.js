@@ -8,7 +8,7 @@ function Navbar({ onConnectWallet, account }) {
       <div className="actions">
         {account ? (
           <span className="account-display">
-            Connected: {account.substring(0, 6)}...
+            Connected: {account}...
           </span>
         ) : (
           <button onClick={onConnectWallet}>Connect Wallet</button>

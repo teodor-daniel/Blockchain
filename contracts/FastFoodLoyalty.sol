@@ -20,7 +20,7 @@ contract FastFoodLoyalty is ReentrancyGuard {
     struct Account {
         Role role;
         uint256 points;
-        uint256 redeemedPoints; 
+        uint256 redeemedPoints; // Tracks points redeemed by a restaurant
     }
 
     mapping(address => Account) public accounts;
@@ -53,15 +53,24 @@ contract FastFoodLoyalty is ReentrancyGuard {
         discountManager = DiscountManager(discountManagerAddress);
     }
 
+    function register(Role role) external {
+        require(accounts[msg.sender].role == Role.None, "Account already registered");
+        accounts[msg.sender] = Account(role, 0, 0);
+        emit AccountRegistered(msg.sender, role);
+    }
+
     function registerAccount(address account, Role role) external onlyOwner {
         require(accounts[account].role == Role.None, "Account already registered");
         accounts[account] = Account(role, 0, 0);
         emit AccountRegistered(account, role);
     }
-
     function addMenuItem(string memory name, uint256 price) external onlyRestaurant {
-        restaurantMenus[msg.sender].push(MenuItem(name, price));
+        require(price > 0, "Price must be greater than 0");
+        require(bytes(name).length > 0, "Item name cannot be empty");
+
+        // Debug logs
         emit MenuItemAdded(msg.sender, name, price);
+        restaurantMenus[msg.sender].push(MenuItem(name, price));
     }
 
     function redeemItem(address restaurant, uint256 itemIndex) external onlyCustomer {
@@ -91,7 +100,9 @@ contract FastFoodLoyalty is ReentrancyGuard {
         return accounts[restaurant].redeemedPoints;
     }
 
-
+    /**
+     * @dev buy() – acum folosim DiscountLib și stocăm ETH în contract (Withdrawal Pattern).
+     */
     function buy(address payable restaurant, uint256 itemIndex, uint256 quantity)
         external
         payable
@@ -112,12 +123,12 @@ contract FastFoodLoyalty is ReentrancyGuard {
 
         balances[restaurant] += msg.value;
 
-
         uint256 points = msg.value / 1000000000000000; 
         accounts[msg.sender].points += points;
 
         emit PointsAwarded(msg.sender, points);
     }
+
 
     function withdraw() external nonReentrant {
         uint256 amount = balances[msg.sender];
