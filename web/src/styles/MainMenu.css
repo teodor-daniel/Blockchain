@@ -104,3 +104,15 @@ select {
   background: rgba(0, 0, 0, 0.5);
   z-index: 999;
 }
+.old-price {
+  text-decoration: line-through;
+  color: #888;
+  font-size: 14px;
+  margin-right: 8px;
+}
+
+.discounted-price {
+  font-weight: bold;
+  color: #e53935;
+  font-size: 18px;
+}

@@ -14,7 +14,7 @@ async function main() {
   const fastFoodLoyaltyAddress = addresses.FastFoodLoyalty;
   const discountManagerAddress = addresses.DiscountManager;
 
-  const [owner, restaurant, customer] = await ethers.getSigners();
+  const [owner, restaurant, restaurantTwo,customer] = await ethers.getSigners();
   console.log("Owner address:", owner.address);
   console.log("Restaurant address:", restaurant.address);
   console.log("Customer address:", customer.address);
@@ -42,7 +42,7 @@ async function main() {
   await fastFoodLoyalty.connect(restaurant).addMenuItem("Fries", 3);
 
   console.log("Customer buying 1 Burger at full price...");
-  const burgerPrice = ethers.parseEther("5"); //5 ETH for simplicity
+  const burgerPrice = ethers.parseEther("5"); 
   await fastFoodLoyalty.connect(customer).buy(restaurant.address, 0, 1, {
     value: burgerPrice,
   });
@@ -63,7 +63,7 @@ async function main() {
   let customerEthBalanceAfterDiscountedPurchase = await ethers.provider.getBalance(customer.address);
 
   console.log("Customer buying 1 Salad at full price...");
-  const saladPrice = ethers.parseEther("3"); //3 ETH for simplicity
+  const saladPrice = ethers.parseEther("3");
   await fastFoodLoyalty.connect(customer).buy(restaurant.address, 1, 1, {
     value: saladPrice,
   });

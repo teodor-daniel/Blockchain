@@ -20,14 +20,12 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
   const [modalContent, setModalContent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Populate the "restaurants" dropdown from your FastFoodLoyalty.json
   useEffect(() => {
     if (fastFoodAbi.restaurants) {
       setRestaurants(fastFoodAbi.restaurants);
     }
   }, []);
 
-  // Fetch and store a restaurant's menu items
   async function fetchMenu() {
     if (!fastFoodContract || !selectedRestaurant) return;
 
@@ -39,12 +37,10 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
     }
   }
 
-  // Whenever the user picks a different restaurant in the dropdown, re-fetch the menu
   useEffect(() => {
     if (selectedRestaurant) {
       fetchMenu();
     }
-    // eslint-disable-next-line
   }, [selectedRestaurant]);
 
   /**
@@ -60,20 +56,16 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
       const item = menuItems[index];
       const basePrice = item.price; // BigInt
 
-      // 1) Get discount from DiscountManager
       const discount = await discountManagerContract.getDiscount(selectedRestaurant, index);
-      // discount is e.g. 20 => 20%
 
-      // 2) Calculate discounted price
+
       const discountedPrice = basePrice - (basePrice * discount) / 100n;
 
-      // 3) Send the discounted price
       const tx = await fastFoodContract.buy(selectedRestaurant, index, 1, {
         value: discountedPrice,
       });
       await tx.wait();
 
-      // Show success info
       openModal(
         `You bought "${item.name}" at a ${discount}% discount! Paid ${ethers.formatEther(discountedPrice)} ETH.`
       );
@@ -112,7 +104,6 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
     }
   }
 
-  // Simple modal helpers
   function openModal(content) {
     setModalContent(content);
     setIsModalOpen(true);
