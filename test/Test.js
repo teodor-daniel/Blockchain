@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("FastFoodLoyalty and DiscountManager Tests", function () {
+describe("FastFoodLoyalty and DiscountManager Gas Analysis", function () {
   let owner, restaurant1, restaurant2, customer;
   let DiscountManager, FastFoodLoyalty;
   let discountManager, fastFoodLoyalty;
@@ -36,14 +36,20 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
   // a. Test Adding Menu Items for Multiple Restaurants
   it("should allow multiple restaurants to add their own menu items", async function () {
     // Restaurant 1 adds "Simple Burger"
-    await fastFoodLoyalty.connect(restaurant1).addMenuItem("Simple Burger", ethers.parseEther("5"));
+    const addMenuItemTx1 = await fastFoodLoyalty.connect(restaurant1).addMenuItem("Simple Burger", ethers.parseEther("5"));
+    const receipt1 = await addMenuItemTx1.wait();
+    console.log("Gas used for adding Simple Burger:", receipt1.gasUsed.toString());
+
     let menu1 = await fastFoodLoyalty.getMenu(restaurant1.address);
     expect(menu1.length).to.equal(1);
     expect(menu1[0].name).to.equal("Simple Burger");
     expect(menu1[0].price).to.equal(ethers.parseEther("5"));
 
     // Restaurant 2 adds "Burger Deluxe"
-    await fastFoodLoyalty.connect(restaurant2).addMenuItem("Burger Deluxe", ethers.parseEther("10"));
+    const addMenuItemTx2 = await fastFoodLoyalty.connect(restaurant2).addMenuItem("Burger Deluxe", ethers.parseEther("10"));
+    const receipt2 = await addMenuItemTx2.wait();
+    console.log("Gas used for adding Burger Deluxe:", receipt2.gasUsed.toString());
+
     let menu2 = await fastFoodLoyalty.getMenu(restaurant2.address);
     expect(menu2.length).to.equal(1);
     expect(menu2[0].name).to.equal("Burger Deluxe");
@@ -61,14 +67,16 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
     const buyTx1 = await fastFoodLoyalty.connect(customer).buy(restaurant1.address, 0, 1, {
       value: burgerPrice,
     });
-    await buyTx1.wait();
+    const receipt1 = await buyTx1.wait();
+    console.log("Gas used for buying Simple Burger:", receipt1.gasUsed.toString());
 
     // Purchase from Restaurant 2
     const deluxePrice = ethers.parseEther("10");
     const buyTx2 = await fastFoodLoyalty.connect(customer).buy(restaurant2.address, 0, 1, {
       value: deluxePrice,
     });
-    await buyTx2.wait();
+    const receipt2 = await buyTx2.wait();
+    console.log("Gas used for buying Burger Deluxe:", receipt2.gasUsed.toString());
 
     // Check customer points
     const customerPoints = await fastFoodLoyalty.getCustomerPoints(customer.address);
@@ -90,12 +98,18 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
     await fastFoodLoyalty.connect(restaurant2).addMenuItem("Burger Deluxe", ethers.parseEther("10"));
 
     // Apply 20% discount on Restaurant 1's "Simple Burger"
-    await discountManager.connect(restaurant1).setDiscount(restaurant1.address, 0, 20);
+    const setDiscountTx1 = await discountManager.connect(restaurant1).setDiscount(restaurant1.address, 0, 20);
+    const receipt1 = await setDiscountTx1.wait();
+    console.log("Gas used for setting 20% discount on Simple Burger:", receipt1.gasUsed.toString());
+
     const discount1 = await discountManager.getDiscount(restaurant1.address, 0);
     expect(discount1).to.equal(20);
 
     // Apply 50% discount on Restaurant 2's "Burger Deluxe"
-    await discountManager.connect(restaurant2).setDiscount(restaurant2.address, 0, 50);
+    const setDiscountTx2 = await discountManager.connect(restaurant2).setDiscount(restaurant2.address, 0, 50);
+    const receipt2 = await setDiscountTx2.wait();
+    console.log("Gas used for setting 50% discount on Burger Deluxe:", receipt2.gasUsed.toString());
+
     const discount2 = await discountManager.getDiscount(restaurant2.address, 0);
     expect(discount2).to.equal(50);
 
@@ -104,14 +118,16 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
     const buyTx1 = await fastFoodLoyalty.connect(customer).buy(restaurant1.address, 0, 1, {
       value: discountedBurgerPrice,
     });
-    await buyTx1.wait();
+    const receipt3 = await buyTx1.wait();
+    console.log("Gas used for buying discounted Simple Burger:", receipt3.gasUsed.toString());
 
     // Customer buys discounted "Burger Deluxe" from Restaurant 2
     const discountedDeluxePrice = ethers.parseEther("5"); // 10 ETH - 50% = 5 ETH
     const buyTx2 = await fastFoodLoyalty.connect(customer).buy(restaurant2.address, 0, 1, {
       value: discountedDeluxePrice,
     });
-    await buyTx2.wait();
+    const receipt4 = await buyTx2.wait();
+    console.log("Gas used for buying discounted Burger Deluxe:", receipt4.gasUsed.toString());
 
     // Check customer points
     const customerPoints = await fastFoodLoyalty.getCustomerPoints(customer.address);
@@ -163,7 +179,8 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
 
     // Redeem "Simple Burger" from Restaurant 1 (requires 5 ETH / 1e15 = 5000 points)
     const redeemTx1 = await fastFoodLoyalty.connect(customer).redeemItem(restaurant1.address, 0);
-    await redeemTx1.wait();
+    const receipt1 = await redeemTx1.wait();
+    console.log("Gas used for redeeming Simple Burger:", receipt1.gasUsed.toString());
 
     // Check points after first redemption
     const pointsAfterRedeem1 = await fastFoodLoyalty.getCustomerPoints(customer.address);
@@ -172,14 +189,14 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
 
     // Redeem "Burger Deluxe" from Restaurant 2 (requires 10 ETH / 1e15 = 10000 points)
     const redeemTx2 = await fastFoodLoyalty.connect(customer).redeemItem(restaurant2.address, 0);
-    await redeemTx2.wait();
+    const receipt2 = await redeemTx2.wait();
+    console.log("Gas used for redeeming Burger Deluxe:", receipt2.gasUsed.toString());
 
     // Check customer points after second redemption
     const pointsAfterRedeem2 = await fastFoodLoyalty.getCustomerPoints(customer.address);
     console.log(`Customer points after second redemption: ${pointsAfterRedeem2}`);
     expect(pointsAfterRedeem2).to.equal(0); // 10000 - 10000
-});
-
+  });
 
   // g. Test Event Emissions
   it("should emit events correctly during various operations", async function () {
@@ -242,6 +259,7 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
       .to.emit(fastFoodLoyalty, "ItemRedeemed")
       .withArgs(customer.address, "Burger Deluxe");
   });
+
   // h. Test Edge cases eg 100% discount, non-restaurant accounts setting discounts, non-customer accounts buying items, redeeming more points than available
   describe("Edge Case Tests", function () {
     // 100% discount
@@ -251,6 +269,7 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
         discountManager.connect(restaurant1).setDiscount(restaurant1.address, 0, 150) // 150% discount
       ).to.be.revertedWith("Discount cannot exceed 100%");
     });
+
     // Non-restaurant accounts setting discounts
     it("should not allow non-restaurant accounts to set discounts", async function () {
       await fastFoodLoyalty.connect(restaurant1).addMenuItem("Simple Burger", ethers.parseEther("5"));
@@ -258,6 +277,7 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
         discountManager.connect(customer).setDiscount(restaurant1.address, 0, 20) // Customer trying to set discount
       ).to.be.revertedWith("Only the restaurant can set discounts");
     });
+
     // Non-customer accounts buying items
     it("should not allow non-customer accounts to buy items", async function () {
       await fastFoodLoyalty.connect(restaurant1).addMenuItem("Simple Burger", ethers.parseEther("5"));
@@ -267,6 +287,7 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
         })
       ).to.be.revertedWith("Only customers can perform this action");
     });
+
     // Redeeming more points than available
     it("should not allow redeeming more points than available", async function () {
       await fastFoodLoyalty.connect(restaurant1).addMenuItem("Simple Burger", ethers.parseEther("5"));

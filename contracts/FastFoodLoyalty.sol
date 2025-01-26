@@ -64,6 +64,7 @@ contract FastFoodLoyalty is ReentrancyGuard {
         accounts[account] = Account(role, 0, 0);
         emit AccountRegistered(account, role);
     }
+
     function addMenuItem(string memory name, uint256 price) external onlyRestaurant {
         require(price > 0, "Price must be greater than 0");
         require(bytes(name).length > 0, "Item name cannot be empty");
@@ -77,11 +78,12 @@ contract FastFoodLoyalty is ReentrancyGuard {
         require(itemIndex < restaurantMenus[restaurant].length, "Invalid menu item index");
 
         MenuItem memory item = restaurantMenus[restaurant][itemIndex];
-        require(accounts[msg.sender].points >= item.price, "Not enough points to redeem this item");
+        uint256 requiredPoints = item.price / 1e15; // Convert price from Wei to points
+        require(accounts[msg.sender].points >= requiredPoints, "Not enough points to redeem this item");
 
-        accounts[msg.sender].points -= item.price;
-        accounts[msg.sender].redeemedPoints += item.price;
-        accounts[restaurant].redeemedPoints += item.price;
+        accounts[msg.sender].points -= requiredPoints;
+        accounts[msg.sender].redeemedPoints += requiredPoints;
+        accounts[restaurant].redeemedPoints += requiredPoints;
 
         emit ItemRedeemed(msg.sender, item.name);
     }
@@ -123,12 +125,11 @@ contract FastFoodLoyalty is ReentrancyGuard {
 
         balances[restaurant] += msg.value;
 
-        uint256 points = msg.value / 1000000000000000; 
+        uint256 points = msg.value / 1e15; 
         accounts[msg.sender].points += points;
 
         emit PointsAwarded(msg.sender, points);
     }
-
 
     function withdraw() external nonReentrant {
         uint256 amount = balances[msg.sender];
