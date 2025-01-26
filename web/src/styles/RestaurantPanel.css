@@ -1,19 +1,73 @@
+/* RestaurantPanel.css */
+
 .restaurant-panel {
-    background: #fff;
-    padding: 1rem;
-    border-radius: 8px;
-  }
-  
-  .panel-section {
-    margin-bottom: 1rem;
-  }
-  
-  .panel-section h3 {
-    margin-top: 0;
-  }
-  
-  input {
-    margin-right: 0.5rem;
-    padding: 0.3rem;
-  }
-  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  background: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: #343a40;
+}
+
+.panel-section {
+  width: 100%;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.panel-section h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #495057;
+}
+
+input,
+select {
+  padding: 0.5rem 1rem;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+}
+
+button {
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.notification {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+p {
+  font-size: 1rem;
+  color: #495057;
+}

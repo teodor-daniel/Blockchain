@@ -20,7 +20,7 @@ contract FastFoodLoyalty is ReentrancyGuard {
     struct Account {
         Role role;
         uint256 points;
-        uint256 redeemedPoints; 
+        uint256 redeemedPoints; // Tracks points redeemed by a restaurant
     }
 
     mapping(address => Account) public accounts;
@@ -68,26 +68,24 @@ contract FastFoodLoyalty is ReentrancyGuard {
         require(price > 0, "Price must be greater than 0");
         require(bytes(name).length > 0, "Item name cannot be empty");
 
+        // Debug logs
         emit MenuItemAdded(msg.sender, name, price);
         restaurantMenus[msg.sender].push(MenuItem(name, price));
     }
-    // Function to redeem points for an item
-    function redeemItem(address restaurant, uint256 itemIndex) external {
-        require(accounts[msg.sender].role == Role.Customer, "Only customers can perform this action");
-        require(itemIndex < restaurantMenus[restaurant].length, "Invalid menu item");
 
-        uint256 itemPrice = restaurantMenus[restaurant][itemIndex].price;
-        uint256 requiredPoints = (itemPrice * 1000) / 1 ether;
+    function redeemItem(address restaurant, uint256 itemIndex) external onlyCustomer {
+        require(itemIndex < restaurantMenus[restaurant].length, "Invalid menu item index");
 
-        require(accounts[msg.sender].points >= requiredPoints, "Not enough points to redeem this item");
+        MenuItem memory item = restaurantMenus[restaurant][itemIndex];
+        require(accounts[msg.sender].points >= item.price, "Not enough points to redeem this item");
 
-        accounts[msg.sender].points -= requiredPoints;
-        accounts[msg.sender].redeemedPoints += requiredPoints;
+        accounts[msg.sender].points -= item.price;
+        accounts[msg.sender].redeemedPoints += item.price;
+        accounts[restaurant].redeemedPoints += item.price;
 
-        emit ItemRedeemed(msg.sender, restaurantMenus[restaurant][itemIndex].name);
+        emit ItemRedeemed(msg.sender, item.name);
     }
 
-    // View functions
     function getMenu(address restaurant) external view returns (MenuItem[] memory) {
         return restaurantMenus[restaurant];
     }
@@ -103,7 +101,7 @@ contract FastFoodLoyalty is ReentrancyGuard {
     }
 
     /**
-     * @dev buy() – Allows customers to buy items from a restaurant’s menu.
+     * @dev buy() – acum folosim DiscountLib și stocăm ETH în contract (Withdrawal Pattern).
      */
     function buy(address payable restaurant, uint256 itemIndex, uint256 quantity)
         external

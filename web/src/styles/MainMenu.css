@@ -1,76 +1,145 @@
+/* MainMenu.css */
 
 .main-menu {
-  max-width: 600px;
-  margin: auto;
-  background: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
-  color: #333333;
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #343a40;
 }
 
-button {
-  background-color: #4caf50;
-  color: white;
+.check-points,
+.check-balance,
+.restaurant-selector {
+  margin: 1.5rem 0;
+  width: 100%;
+}
+
+.check-points button,
+.check-balance button,
+.restaurant-selector button {
+  padding: 0.8rem 1.5rem;
+  font-size: 1.1rem;
   border: none;
-  border-radius: 6px;
-  padding: 10px 20px;
-  font-size: 16px;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
   cursor: pointer;
   transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: #45a049;
-}
-
-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.restaurant-selector,
-.check-points,
-.check-balance {
-  margin: 1rem 0;
-}
-
-select {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  margin-bottom: 10px;
-}
-
-.menu-list {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.menu-card {
-  border: 1px solid #eee;
-  padding: 1rem;
-  border-radius: 8px;
-  width: 240px;
-  text-align: left;
-  background: #fdfdfd;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.menu-card h3 {
-  color: #4caf50;
+.check-points button:hover,
+.check-balance button:hover,
+.restaurant-selector button:hover {
+  background-color: #0056b3;
+}
+
+.restaurant-selector select {
+  padding: 0.6rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  margin-left: 0.5rem;
+  background-color: white;
+  color: #495057;
+}
+
+.menu-list {
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.menu-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.menu-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.menu-card h4 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  color: #212529;
 }
 
 .menu-card p {
-  color: #555;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #495057;
+}
+
+.menu-buttons {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.menu-card button {
+  padding: 0.8rem 1.2rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.menu-card button:first-child {
+  background-color: #28a745;
+  color: white;
+}
+
+.menu-card button:first-child:hover {
+  background-color: #218838;
+  transform: scale(1.05);
+}
+
+.menu-card button:last-child {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.menu-card button:last-child:hover {
+  background-color: #e0a800;
+  transform: scale(1.05);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
 }
 
 .modal {
@@ -81,38 +150,120 @@ select {
   background: white;
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
   z-index: 1000;
+  text-align: center;
 }
 
 .modal h3 {
-  color: #333;
+  font-size: 1.8rem;
   margin-bottom: 1rem;
+  color: #343a40;
+}
+
+.modal p {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #495057;
 }
 
 .modal button {
-  background-color: #f44336;
+  margin-top: 1rem;
+  padding: 0.8rem 1.5rem;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #dc3545;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
+.modal button:hover {
+  background-color: #c82333;
+}
+
+.success {
+  color: #28a745;
+  font-size: 1rem;
+  margin-top: 1rem;
+}
+
+.error {
+  color: #dc3545;
+  font-size: 1rem;
+  margin-top: 1rem;
+}
+/* MainMenu.css */
+
+.main-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #343a40;
+}
+
+.check-info {
+  margin: 1.5rem 0;
+}
+
+.check-info button {
+  padding: 0.8rem 1.5rem;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.restaurant-selector select {
+  padding: 0.6rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  margin-left: 0.5rem;
+}
+
+.notification {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.menu-list {
+  margin-top: 2rem;
   width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-}
-.old-price {
-  text-decoration: line-through;
-  color: #888;
-  font-size: 14px;
-  margin-right: 8px;
 }
 
-.discounted-price {
-  font-weight: bold;
-  color: #e53935;
-  font-size: 18px;
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.menu-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: white;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }

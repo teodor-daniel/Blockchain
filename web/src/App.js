@@ -8,7 +8,7 @@ import RestaurantPanel from "./components/RestaurantPanel";
 import Navbar from "./components/Navbar";
 
 const FAST_FOOD_LOYALTY_ADDRESS = fastFoodAbi.address;
-const DISCOUNT_MANAGER_ADDRESS = discountManagerAbi.address;
+const DISCOUNT_MANAGER_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 function App() {
   const [provider, setProvider] = useState(null);
@@ -34,6 +34,7 @@ function App() {
       setAccount(userAddress);
 
       // Instantiate contracts
+      console.log("Connecting to contracts... fastFoodAbi:", fastFoodAbi);
       const fastFood = new ethers.Contract(
         FAST_FOOD_LOYALTY_ADDRESS,
         fastFoodAbi.abi,

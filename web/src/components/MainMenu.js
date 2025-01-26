@@ -3,22 +3,12 @@ import { ethers } from "ethers";
 import fastFoodAbi from "../abis/FastFoodLoyalty.json";
 import "../styles/MainMenu.css";
 
-/**
- * MainMenu Component
- * 
- * Expects props:
- *  - account (the current user's address)
- *  - fastFoodContract (an ethers.Contract for FastFoodLoyalty)
- *  - discountManagerContract (an ethers.Contract for DiscountManager)
- */
 function MainMenu({ account, fastFoodContract, discountManagerContract }) {
   const [menuItems, setMenuItems] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [restaurants, setRestaurants] = useState([]);
-  const [customerPoints, setCustomerPoints] = useState(null);
-  const [ethBalance, setEthBalance] = useState(null);
-  const [modalContent, setModalContent] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [notification, setNotification] = useState(null); // For temporary messages
+  const [isRedeeming, setIsRedeeming] = useState(false);
 
   useEffect(() => {
     if (fastFoodAbi.restaurants) {
@@ -28,12 +18,12 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
 
   async function fetchMenu() {
     if (!fastFoodContract || !selectedRestaurant) return;
-
     try {
       const items = await fastFoodContract.getMenu(selectedRestaurant);
       setMenuItems(items);
     } catch (err) {
-      console.error("Error fetching menu:", err);
+      showTemporaryMessage("Failed to fetch menu. Check console for details.");
+      console.error(err);
     }
   }
 
@@ -43,22 +33,35 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
     }
   }, [selectedRestaurant]);
 
-  /**
-   * Buy an item at a given index.
-   * - Fetches the discount from DiscountManager
-   * - Calculates discounted price
-   * - Calls `buy()` with the discounted price as msg.value
-   */
+  async function handleCheckInfo() {
+    if (!fastFoodContract || !account) return;
+
+    try {
+      // Fetch points and balance in parallel
+      const pointsPromise = fastFoodContract.getCustomerPoints(account);
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const balancePromise = provider.getBalance(account);
+
+      const [points, balance] = await Promise.all([pointsPromise, balancePromise]);
+      const formattedBalance = ethers.formatEther(balance);
+
+      // Show temporary message
+      showTemporaryMessage(
+        `Points: ${points.toString()} | ETH Balance: ${formattedBalance} ETH`
+      );
+    } catch (err) {
+      showTemporaryMessage("Failed to fetch account information. Check console for details.");
+      console.error(err);
+    }
+  }
+
   async function buyItem(index) {
     if (!fastFoodContract || !discountManagerContract || !selectedRestaurant) return;
 
     try {
       const item = menuItems[index];
-      const basePrice = item.price; // BigInt
-
+      const basePrice = item.price;
       const discount = await discountManagerContract.getDiscount(selectedRestaurant, index);
-
-
       const discountedPrice = basePrice - (basePrice * discount) / 100n;
 
       const tx = await fastFoodContract.buy(selectedRestaurant, index, 1, {
@@ -66,68 +69,55 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
       });
       await tx.wait();
 
-      openModal(
-        `You bought "${item.name}" at a ${discount}% discount! Paid ${ethers.formatEther(discountedPrice)} ETH.`
+      showTemporaryMessage(
+        `Successfully bought "${item.name}" at a ${discount}% discount! Paid ${ethers.formatEther(
+          discountedPrice
+        )} ETH.`
       );
     } catch (err) {
-      console.error("Error buying item:", err);
-      openModal("Failed to complete the purchase. Check console for details.");
+      showTemporaryMessage("Failed to complete the purchase. Check console for details.");
+      console.error(err);
     }
   }
 
-  async function fetchCustomerPoints() {
-    if (!fastFoodContract || !account) return;
+  async function redeemItem(index) {
+    if (!fastFoodContract || !selectedRestaurant) return;
+
+    setIsRedeeming(true);
 
     try {
-      const points = await fastFoodContract.getCustomerPoints(account);
-      const formattedPoints = ethers.formatEther(points);
-      setCustomerPoints(formattedPoints);
-      openModal(`You have ${formattedPoints} points.`);
+      const item = menuItems[index];
+      const tx = await fastFoodContract.redeemItem(selectedRestaurant, index);
+      await tx.wait();
+
+      showTemporaryMessage(`Successfully redeemed "${item.name}" using points!`);
     } catch (err) {
-      console.error("Error fetching customer points:", err);
-      openModal("Failed to fetch points.");
+      showTemporaryMessage("Failed to redeem item. Check console for details.");
+      console.error(err);
+    } finally {
+      setIsRedeeming(false);
     }
   }
 
-  async function fetchCustomerBalance() {
-    if (!account) return;
-
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const balance = await provider.getBalance(account);
-      const formattedBalance = ethers.formatEther(balance);
-      setEthBalance(formattedBalance);
-      openModal(`Your wallet balance is ${formattedBalance} ETH.`);
-    } catch (err) {
-      console.error("Error fetching ETH balance:", err);
-      openModal("Failed to fetch balance.");
-    }
-  }
-
-  function openModal(content) {
-    setModalContent(content);
-    setIsModalOpen(true);
-  }
-
-  function closeModal() {
-    setIsModalOpen(false);
-    setModalContent(null);
+  // Display a temporary notification message
+  function showTemporaryMessage(message) {
+    setNotification(message);
+    setTimeout(() => {
+      setNotification(null);
+    }, 8000);
   }
 
   return (
     <div className="main-menu">
       <h2>Welcome Customer!</h2>
 
-      <div className="check-points">
-        <button onClick={fetchCustomerPoints}>Check My Points</button>
+      <div className="check-info">
+        <button onClick={handleCheckInfo}>Check My Info</button>
       </div>
 
-      <div className="check-balance">
-        <button onClick={fetchCustomerBalance}>Check My ETH Balance</button>
-      </div>
+      {notification && <p className="notification">{notification}</p>}
 
       <div className="restaurant-selector">
-        <label>Select a Restaurant:</label>
         <select
           value={selectedRestaurant}
           onChange={(e) => setSelectedRestaurant(e.target.value)}
@@ -146,25 +136,20 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
 
       {menuItems.length > 0 && (
         <div className="menu-list">
-          {menuItems.map((item, idx) => (
-            <div className="menu-card" key={idx}>
-              <h3>{item.name}</h3>
-              <p>Base Price: {ethers.formatEther(item.price)} ETH</p>
-              <button onClick={() => buyItem(idx)}>Buy</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {isModalOpen && (
-        <>
-          <div className="modal-overlay" onClick={closeModal}></div>
-          <div className="modal">
-            <h3>Information</h3>
-            <p>{modalContent}</p>
-            <button onClick={closeModal}>Close</button>
+          <h3>Menu Items</h3>
+          <div className="menu-grid">
+            {menuItems.map((item, idx) => (
+              <div className="menu-card" key={idx}>
+                <h4>{item.name}</h4>
+                <p>Base Price: {ethers.formatEther(item.price)} ETH</p>
+                <div className="menu-buttons">
+                  <button onClick={() => buyItem(idx)}>Buy</button>
+                  <button onClick={() => redeemItem(idx)}>Redeem</button>
+                </div>
+              </div>
+            ))}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

@@ -147,12 +147,12 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
 
     // Customer purchases
     const buyTx1 = await fastFoodLoyalty.connect(customer).buy(restaurant1.address, 0, 1, {
-      value: ethers.parseEther("5"),
+        value: ethers.parseEther("5"),
     });
     await buyTx1.wait();
 
     const buyTx2 = await fastFoodLoyalty.connect(customer).buy(restaurant2.address, 0, 1, {
-      value: ethers.parseEther("10"),
+        value: ethers.parseEther("10"),
     });
     await buyTx2.wait();
 
@@ -161,7 +161,7 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
     console.log(`Customer points before redemption: ${points}`);
     expect(points).to.equal(15000); // 5000 + 10000
 
-    // Redeem "Simple Burger" from Restaurant 1
+    // Redeem "Simple Burger" from Restaurant 1 (requires 5 ETH / 1e15 = 5000 points)
     const redeemTx1 = await fastFoodLoyalty.connect(customer).redeemItem(restaurant1.address, 0);
     await redeemTx1.wait();
 
@@ -170,7 +170,7 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
     console.log(`Customer points after first redemption: ${pointsAfterRedeem1}`);
     expect(pointsAfterRedeem1).to.equal(10000); // 15000 - 5000
 
-    // Redeem "Burger Deluxe" from Restaurant 2
+    // Redeem "Burger Deluxe" from Restaurant 2 (requires 10 ETH / 1e15 = 10000 points)
     const redeemTx2 = await fastFoodLoyalty.connect(customer).redeemItem(restaurant2.address, 0);
     await redeemTx2.wait();
 
@@ -178,7 +178,8 @@ describe("FastFoodLoyalty and DiscountManager Tests", function () {
     const pointsAfterRedeem2 = await fastFoodLoyalty.getCustomerPoints(customer.address);
     console.log(`Customer points after second redemption: ${pointsAfterRedeem2}`);
     expect(pointsAfterRedeem2).to.equal(0); // 10000 - 10000
-  });
+});
+
 
   // g. Test Event Emissions
   it("should emit events correctly during various operations", async function () {

@@ -4,7 +4,7 @@ import "../styles/Navbar.css";
 function Navbar({ onConnectWallet, account }) {
   return (
     <nav className="navbar">
-      <div className="logo">FastFood App</div>
+      <div className="logo">BlockLoyalty</div>
       <div className="actions">
         {account ? (
           <span className="account-display">

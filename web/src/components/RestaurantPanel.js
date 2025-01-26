@@ -3,75 +3,65 @@ import { ethers } from "ethers";
 import "../styles/RestaurantPanel.css";
 
 function RestaurantPanel({ account, fastFoodContract, discountManagerContract }) {
-  const [itemName, setItemName] = useState(""); // For adding menu items
-  const [itemPrice, setItemPrice] = useState(""); // For adding menu items
-  const [menuItems, setMenuItems] = useState([]); // For existing menu items
-  const [selectedItemIndex, setSelectedItemIndex] = useState(null); // For selecting a menu item
-  const [discountPercentage, setDiscountPercentage] = useState(10); // For setting discounts
+  const [itemName, setItemName] = useState("");
+  const [itemPrice, setItemPrice] = useState("");
+  const [menuItems, setMenuItems] = useState([]);
+  const [selectedItemIndex, setSelectedItemIndex] = useState(null);
+  const [discountPercentage, setDiscountPercentage] = useState(10);
+  const [ethBalance, setEthBalance] = useState(null);
+  const [notification, setNotification] = useState(null); // For temporary messages
+  const [isBalanceLoading, setIsBalanceLoading] = useState(false);
 
-  // Fetch menu items for the restaurant
   useEffect(() => {
     async function fetchMenuItems() {
       try {
         if (!fastFoodContract || !account) return;
-
         const items = await fastFoodContract.getMenu(account);
         setMenuItems(items);
       } catch (err) {
-        console.error("Error fetching menu items:", err);
+        showTemporaryMessage("Error fetching menu items. Check console for details.");
+        console.error(err);
       }
     }
 
     fetchMenuItems();
   }, [fastFoodContract, account]);
 
-  // Add a new menu item
   async function handleAddMenuItem() {
     try {
-      if (!fastFoodContract) {
-        alert("Contract not connected.");
-        return;
-      }
-
       if (!itemName.trim()) {
-        alert("Item name cannot be empty.");
+        showTemporaryMessage("Item name cannot be empty.");
         return;
       }
       if (isNaN(itemPrice) || itemPrice <= 0) {
-        alert("Item price must be a valid number greater than 0.");
+        showTemporaryMessage("Item price must be a valid number greater than 0.");
         return;
       }
 
       const itemPriceInWei = ethers.parseEther(itemPrice);
-
-      console.log(`Adding menu item: ${itemName}, Price (Wei): ${itemPriceInWei.toString()}`);
-
       const tx = await fastFoodContract.addMenuItem(itemName, itemPriceInWei);
       await tx.wait();
 
-      alert(`Added '${itemName}' at ${itemPrice} ETH to the restaurant menu!`);
+      showTemporaryMessage(`Added '${itemName}' at ${itemPrice} ETH to the menu!`);
 
-      // Clear inputs
       setItemName("");
       setItemPrice("");
 
-      // Refresh menu items
       const updatedMenu = await fastFoodContract.getMenu(account);
       setMenuItems(updatedMenu);
     } catch (err) {
-      console.error("Error adding menu item:", err);
-      alert("Failed to add menu item. Check console for details.");
+      showTemporaryMessage("Failed to add menu item. Check console for details.");
+      console.error(err);
     }
   }
 
-  // Set a discount for a selected menu item
   async function handleSetDiscount() {
-    if (!discountManagerContract || selectedItemIndex === null) {
-      alert("Please select a menu item and discount percentage.");
-      return;
-    }
-
     try {
+      if (!selectedItemIndex) {
+        showTemporaryMessage("Please select a menu item.");
+        return;
+      }
+
       const tx = await discountManagerContract.setDiscount(
         account,
         selectedItemIndex,
@@ -79,16 +69,45 @@ function RestaurantPanel({ account, fastFoodContract, discountManagerContract })
       );
       await tx.wait();
 
-      alert(`Set a ${discountPercentage}% discount for item index ${selectedItemIndex}.`);
+      showTemporaryMessage(`Set a ${discountPercentage}% discount for the selected item.`);
     } catch (err) {
-      console.error("Error setting discount:", err);
-      alert("Failed to set discount. Check console for details.");
+      showTemporaryMessage("Failed to set discount. Check console for details.");
+      console.error(err);
     }
+  }
+
+  async function handleCheckBalance() {
+    try {
+      if (!account) {
+        showTemporaryMessage("Account not available.");
+        return;
+      }
+
+      setIsBalanceLoading(true);
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const balance = await provider.getBalance(account);
+      const formattedBalance = ethers.formatEther(balance);
+
+      setEthBalance(formattedBalance);
+      showTemporaryMessage(`Your balance is ${formattedBalance} ETH.`);
+    } catch (err) {
+      showTemporaryMessage("Failed to fetch balance. Check console for details.");
+      console.error(err);
+    } finally {
+      setIsBalanceLoading(false);
+    }
+  }
+
+  function showTemporaryMessage(message) {
+    setNotification(message);
+    setTimeout(() => setNotification(null), 3000);
   }
 
   return (
     <div className="restaurant-panel">
       <h2>Restaurant Panel</h2>
+
+      {notification && <p className="notification">{notification}</p>}
 
       <div className="panel-section">
         <h3>Add Menu Item</h3>
@@ -129,6 +148,18 @@ function RestaurantPanel({ account, fastFoodContract, discountManagerContract })
           <option value={30}>30%</option>
         </select>
         <button onClick={handleSetDiscount}>Apply Discount</button>
+      </div>
+
+      <div className="panel-section">
+        <h3>Check My ETH Balance</h3>
+        <button onClick={handleCheckBalance} disabled={isBalanceLoading}>
+          {isBalanceLoading ? "Checking..." : "Check Balance"}
+        </button>
+        {ethBalance && (
+          <p>
+            <strong>Balance:</strong> {ethBalance} ETH
+          </p>
+        )}
       </div>
     </div>
   );
