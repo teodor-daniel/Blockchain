@@ -1,11 +1,14 @@
+// src/App.js
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
+import axios from "axios";
 import fastFoodAbi from "./abis/FastFoodLoyalty.json";
 import discountManagerAbi from "./abis/DiscountManager.json";
 import RoleSelector from "./components/RoleSelector";
 import MainMenu from "./components/MainMenu";
 import RestaurantPanel from "./components/RestaurantPanel";
 import Navbar from "./components/Navbar";
+import { getEthPrice } from "./utils/getEthPrice";
 
 const FAST_FOOD_LOYALTY_ADDRESS = fastFoodAbi.address;
 const DISCOUNT_MANAGER_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
@@ -17,21 +20,19 @@ function App() {
   const [role, setRole] = useState(0); // 0=None, 1=Restaurant, 2=Customer
   const [fastFoodContract, setFastFoodContract] = useState(null);
   const [discountManagerContract, setDiscountManagerContract] = useState(null);
+  const [ethPrice, setEthPrice] = useState(null);
 
-  // Connect to MetaMask
   async function connectWallet() {
     if (!window.ethereum) {
       alert("Please install MetaMask");
       return;
     }
-    // Request account access
     try {
       await window.ethereum.request({ method: "eth_requestAccounts" });
       const tempProvider = new ethers.BrowserProvider(window.ethereum);
       const tempSigner = await tempProvider.getSigner();
       const userAddress = await tempSigner.getAddress();
 
-      
       setProvider(tempProvider);
       setSigner(tempSigner);
       setAccount(userAddress);
@@ -69,6 +70,21 @@ function App() {
     }
   }
 
+  async function fetchEthPrice() {
+    const price = await getEthPrice();
+    if (price) {
+      setEthPrice(price);
+    } else {
+      setEthPrice(null);
+    }
+  }
+
+  useEffect(() => {
+    fetchEthPrice();
+    const interval = setInterval(fetchEthPrice, 600000); // Refresh every 10 minutes
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     if (fastFoodContract && account) {
       fetchRole();
@@ -101,7 +117,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <Navbar onConnectWallet={connectWallet} account={account} />
+      <Navbar onConnectWallet={connectWallet} account={account} ethPrice={ethPrice} />
       <div style={{ margin: "2rem" }}>
         {role === 0 ? (
           <RoleSelector
@@ -114,12 +130,14 @@ function App() {
             account={account}
             fastFoodContract={fastFoodContract}
             discountManagerContract={discountManagerContract}
+            ethPrice={ethPrice}
           />
         ) : (
           <MainMenu
             account={account}
             fastFoodContract={fastFoodContract}
             discountManagerContract={discountManagerContract}
+            ethPrice={ethPrice}
           />
         )}
       </div>

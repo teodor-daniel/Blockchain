@@ -1,8 +1,9 @@
+// src/components/RestaurantPanel.js
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import "../styles/RestaurantPanel.css";
 
-function RestaurantPanel({ account, fastFoodContract, discountManagerContract }) {
+function RestaurantPanel({ account, fastFoodContract, discountManagerContract, ethPrice }) {
   const [itemName, setItemName] = useState("");
   const [itemPrice, setItemPrice] = useState("");
   const [menuItems, setMenuItems] = useState([]);
@@ -42,7 +43,7 @@ function RestaurantPanel({ account, fastFoodContract, discountManagerContract })
       const tx = await fastFoodContract.addMenuItem(itemName, itemPriceInWei);
       await tx.wait();
 
-      showTemporaryMessage(`Added '${itemName}' at ${itemPrice} ETH to the menu!`);
+      showTemporaryMessage(`Added '${itemName}' at ${itemPrice} ETH ($${(parseFloat(itemPrice) * ethPrice).toFixed(2)} USD) to the menu!`);
 
       setItemName("");
       setItemPrice("");
@@ -57,7 +58,7 @@ function RestaurantPanel({ account, fastFoodContract, discountManagerContract })
 
   async function handleSetDiscount() {
     try {
-      if (!selectedItemIndex) {
+      if (selectedItemIndex === null || selectedItemIndex === undefined) {
         showTemporaryMessage("Please select a menu item.");
         return;
       }
@@ -79,7 +80,6 @@ function RestaurantPanel({ account, fastFoodContract, discountManagerContract })
   async function handleCheckBalance() {
     try {
       if (!account) {
-        showTemporaryMessage("Account not available.");
         return;
       }
 
@@ -89,7 +89,6 @@ function RestaurantPanel({ account, fastFoodContract, discountManagerContract })
       const formattedBalance = ethers.formatEther(balance);
 
       setEthBalance(formattedBalance);
-      showTemporaryMessage(`Your balance is ${formattedBalance} ETH.`);
     } catch (err) {
       showTemporaryMessage("Failed to fetch balance. Check console for details.");
       console.error(err);
@@ -118,7 +117,8 @@ function RestaurantPanel({ account, fastFoodContract, discountManagerContract })
           onChange={(e) => setItemName(e.target.value)}
         />
         <input
-          type="text"
+          type="number"
+          step="0.001"
           placeholder="Item Price (ETH)"
           value={itemPrice}
           onChange={(e) => setItemPrice(e.target.value)}
@@ -135,7 +135,7 @@ function RestaurantPanel({ account, fastFoodContract, discountManagerContract })
           <option value="">-- Select Menu Item --</option>
           {menuItems.map((item, idx) => (
             <option key={idx} value={idx}>
-              {item.name} - {ethers.formatEther(item.price)} ETH
+              {item.name} - {ethers.formatEther(item.price)} ETH (${(parseFloat(ethers.formatEther(item.price)) * ethPrice).toFixed(2)} USD)
             </option>
           ))}
         </select>
@@ -157,9 +157,20 @@ function RestaurantPanel({ account, fastFoodContract, discountManagerContract })
         </button>
         {ethBalance && (
           <p>
-            <strong>Balance:</strong> {ethBalance} ETH
+            <strong>Balance:</strong> {ethBalance} ETH (${(parseFloat(ethBalance) * ethPrice).toFixed(2)} USD)
           </p>
         )}
+      </div>
+
+      <div className="panel-section">
+        <h3>Menu Items</h3>
+        <ul>
+          {menuItems.map((item, idx) => (
+            <li key={idx}>
+              {item.name} - {ethers.formatEther(item.price)} ETH (${(parseFloat(ethers.formatEther(item.price)) * ethPrice).toFixed(2)} USD)
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

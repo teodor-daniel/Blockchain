@@ -71,3 +71,7 @@ p {
   font-size: 1rem;
   color: #495057;
 }
+/* remove the ball */
+li{
+  list-style-type: none;
+}
