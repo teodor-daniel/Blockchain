@@ -7,8 +7,12 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
   const [menuItems, setMenuItems] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [restaurants, setRestaurants] = useState([]);
-  const [notification, setNotification] = useState(null); // For temporary messages
+  const [notification, setNotification] = useState(null);
   const [isRedeeming, setIsRedeeming] = useState(false);
+  
+  // New state variables for persistent account info
+  const [points, setPoints] = useState(null);
+  const [balance, setBalance] = useState(null);
 
   useEffect(() => {
     if (fastFoodAbi.restaurants) {
@@ -42,13 +46,12 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const balancePromise = provider.getBalance(account);
 
-      const [points, balance] = await Promise.all([pointsPromise, balancePromise]);
-      const formattedBalance = ethers.formatEther(balance);
+      const [fetchedPoints, fetchedBalance] = await Promise.all([pointsPromise, balancePromise]);
+      const formattedBalance = ethers.formatEther(fetchedBalance);
 
-      // Show temporary message
-      showTemporaryMessage(
-        `Points: ${points.toString()} | ETH Balance: ${formattedBalance} ETH`
-      );
+      // Update state with fetched data
+      setPoints(fetchedPoints.toString());
+      setBalance(formattedBalance);
     } catch (err) {
       showTemporaryMessage("Failed to fetch account information. Check console for details.");
       console.error(err);
@@ -99,7 +102,6 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
     }
   }
 
-  // Display a temporary notification message
   function showTemporaryMessage(message) {
     setNotification(message);
     setTimeout(() => {
@@ -113,6 +115,15 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
 
       <div className="check-info">
         <button onClick={handleCheckInfo}>Check My Info</button>
+      </div>
+
+      <div className="account-info">
+        {points !== null && balance !== null && (
+          <div>
+            <p><strong>Points:</strong> {points}</p>
+            <p><strong>ETH Balance:</strong> {balance} ETH</p>
+          </div>
+        )}
       </div>
 
       {notification && <p className="notification">{notification}</p>}
@@ -144,7 +155,9 @@ function MainMenu({ account, fastFoodContract, discountManagerContract }) {
                 <p>Base Price: {ethers.formatEther(item.price)} ETH</p>
                 <div className="menu-buttons">
                   <button onClick={() => buyItem(idx)}>Buy</button>
-                  <button onClick={() => redeemItem(idx)}>Redeem</button>
+                  <button onClick={() => redeemItem(idx)} disabled={isRedeeming}>
+                    Redeem
+                  </button>
                 </div>
               </div>
             ))}

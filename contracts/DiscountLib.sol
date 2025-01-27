@@ -1,7 +1,6 @@
-
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// Library for applying discounts to prices
 library DiscountLib {
 
     function applyDiscount(uint256 basePrice, uint256 discountPercentage)

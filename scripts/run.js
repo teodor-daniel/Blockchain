@@ -14,7 +14,7 @@ async function main() {
   const fastFoodLoyaltyAddress = addresses.FastFoodLoyalty;
   const discountManagerAddress = addresses.DiscountManager;
 
-  const [owner, restaurant, restaurantTwo,customer] = await ethers.getSigners();
+  const [owner, restaurant, restaurantTwo, customer,] = await ethers.getSigners();
   console.log("Owner address:", owner.address);
   console.log("Restaurant address:", restaurant.address);
   console.log("Customer address:", customer.address);
@@ -25,6 +25,7 @@ async function main() {
   const DiscountManager = await ethers.getContractFactory("DiscountManager");
   const discountManager = DiscountManager.attach(discountManagerAddress);
 
+  // Register accounts if not already registered
   const restaurantAccountBefore = await fastFoodLoyalty.accounts(restaurant.address);
   if (restaurantAccountBefore.role === 0) {
     console.log("Registering restaurant...");
@@ -37,9 +38,12 @@ async function main() {
     await fastFoodLoyalty.connect(owner).registerAccount(customer.address, 2);
   }
 
+  // Price in wei
+  const fiveEth = ethers.parseEther("5"); 
+  const twoEth = ethers.parseEther("2");
   console.log("Adding menu items...");
-  await fastFoodLoyalty.connect(restaurant).addMenuItem("Burger", 5);
-  await fastFoodLoyalty.connect(restaurant).addMenuItem("Fries", 3);
+  await fastFoodLoyalty.connect(restaurant).addMenuItem("Script Burger", fiveEth);
+  await fastFoodLoyalty.connect(restaurant).addMenuItem("Script Fries", twoEth);
 
   console.log("Customer buying 1 Burger at full price...");
   const burgerPrice = ethers.parseEther("5"); 
@@ -62,11 +66,11 @@ async function main() {
   });
   let customerEthBalanceAfterDiscountedPurchase = await ethers.provider.getBalance(customer.address);
 
-  console.log("Customer buying 1 Salad at full price...");
-  const saladPrice = ethers.parseEther("3");
-  await fastFoodLoyalty.connect(customer).buy(restaurant.address, 1, 1, {
-    value: saladPrice,
-  });
+  // console.log("Customer buying 1 Salad at full price...");
+  // const saladPrice = ethers.parseEther("3");
+  // await fastFoodLoyalty.connect(customer).buy(restaurant.address, 1, 1, {
+  //   value: saladPrice,
+  // });
 
   customerEthBalanceAfterDiscountedPurchase = await ethers.provider.getBalance(customer.address);
   const customerPointsAfterDiscountedPurchase = await fastFoodLoyalty.getCustomerPoints(customer.address);

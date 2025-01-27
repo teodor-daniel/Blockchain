@@ -5,11 +5,13 @@ import "./DiscountManager.sol";
 import "./DiscountLib.sol";
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
+//This contract is used to manage a loyalty program for a fast food chain as well as the menu items for each restaurant
 contract FastFoodLoyalty is ReentrancyGuard {
+
     address public owner;
     DiscountManager public discountManager;
 
+    // 3 Types of users: None, Restaurant, Customer
     enum Role { None, Restaurant, Customer }
 
     struct MenuItem {
@@ -18,21 +20,23 @@ contract FastFoodLoyalty is ReentrancyGuard {
     }
 
     struct Account {
-        Role role;
-        uint256 points;
-        uint256 redeemedPoints; // Tracks points redeemed by a restaurant
+        Role role; 
+        uint256 points; // Points earned from purchases
+        uint256 redeemedPoints; // Points spent on items
     }
 
+    // Mapping of addresses to accounts
     mapping(address => Account) public accounts;
     mapping(address => MenuItem[]) public restaurantMenus;
-
     mapping(address => uint256) public balances;
 
+    // These events log important information for the frontend to display
     event PointsAwarded(address indexed customer, uint256 points);
     event ItemRedeemed(address indexed customer, string itemName);
     event AccountRegistered(address indexed account, Role role);
     event MenuItemAdded(address indexed restaurant, string itemName, uint256 price);
 
+    // Modifiers to restrict access to certain functions
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can perform this action");
         _;
@@ -48,23 +52,27 @@ contract FastFoodLoyalty is ReentrancyGuard {
         _;
     }
 
+    // Constructor to set the owner and the DiscountManager contract address
     constructor(address discountManagerAddress) {
         owner = msg.sender;
         discountManager = DiscountManager(discountManagerAddress);
     }
 
+    // Function to register an account with a specific role
     function register(Role role) external {
         require(accounts[msg.sender].role == Role.None, "Account already registered");
         accounts[msg.sender] = Account(role, 0, 0);
         emit AccountRegistered(msg.sender, role);
     }
 
+    // Function to register an account with a specific role by the owner
     function registerAccount(address account, Role role) external onlyOwner {
         require(accounts[account].role == Role.None, "Account already registered");
         accounts[account] = Account(role, 0, 0);
         emit AccountRegistered(account, role);
     }
 
+    // Function to add a menu item for a restaurant
     function addMenuItem(string memory name, uint256 price) external onlyRestaurant {
         require(price > 0, "Price must be greater than 0");
         require(bytes(name).length > 0, "Item name cannot be empty");
@@ -74,6 +82,7 @@ contract FastFoodLoyalty is ReentrancyGuard {
         restaurantMenus[msg.sender].push(MenuItem(name, price));
     }
 
+    // Function to redeem a menu item using points
     function redeemItem(address restaurant, uint256 itemIndex) external onlyCustomer {
         require(itemIndex < restaurantMenus[restaurant].length, "Invalid menu item index");
 
@@ -87,6 +96,7 @@ contract FastFoodLoyalty is ReentrancyGuard {
 
         emit ItemRedeemed(msg.sender, item.name);
     }
+
 
     function getMenu(address restaurant) external view returns (MenuItem[] memory) {
         return restaurantMenus[restaurant];
@@ -102,9 +112,8 @@ contract FastFoodLoyalty is ReentrancyGuard {
         return accounts[restaurant].redeemedPoints;
     }
 
-    /**
-     * @dev buy() – acum folosim DiscountLib și stocăm ETH în contract (Withdrawal Pattern).
-     */
+
+    // Function to buy a menu item from a restaurant  and earn points based on the amount spent (1 point per 1e15 Wei)
     function buy(address payable restaurant, uint256 itemIndex, uint256 quantity)
         external
         payable
@@ -117,6 +126,7 @@ contract FastFoodLoyalty is ReentrancyGuard {
 
         uint256 discount = discountManager.getDiscount(restaurant, itemIndex);
 
+        // Apply discount to the item price using the DiscountLib library
         uint256 discountedPrice = DiscountLib.applyDiscount(item.price, discount);
 
         uint256 totalPrice = discountedPrice * quantity;

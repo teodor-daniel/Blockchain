@@ -3,6 +3,7 @@ const path = require("path");
 const hre = require("hardhat");
 
 async function main() {
+  // Get signers and their addresses
   const [owner, restaurant1, restaurant2, customer] = await hre.ethers.getSigners();
   console.log("Owner address:", owner.address);
   console.log("Restaurant 1 address:", restaurant1.address);

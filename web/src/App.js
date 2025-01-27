@@ -18,17 +18,20 @@ function App() {
   const [fastFoodContract, setFastFoodContract] = useState(null);
   const [discountManagerContract, setDiscountManagerContract] = useState(null);
 
+  // Connect to MetaMask
   async function connectWallet() {
     if (!window.ethereum) {
       alert("Please install MetaMask");
       return;
     }
+    // Request account access
     try {
       await window.ethereum.request({ method: "eth_requestAccounts" });
       const tempProvider = new ethers.BrowserProvider(window.ethereum);
       const tempSigner = await tempProvider.getSigner();
       const userAddress = await tempSigner.getAddress();
 
+      
       setProvider(tempProvider);
       setSigner(tempSigner);
       setAccount(userAddress);
