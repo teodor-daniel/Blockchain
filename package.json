@@ -11,11 +11,12 @@
   "description": "",
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.3",
+    "dotenv": "^16.4.7",
     "hardhat": "^2.22.18"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat-gas-reporter": "^2.2.2",
+    "hardhat-gas-reporter": "^1.0.10",
     "solidity-coverage": "^0.8.14"
   }
 }
